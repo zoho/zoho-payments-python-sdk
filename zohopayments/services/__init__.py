@@ -16,6 +16,8 @@ from zohopayments.services.payment_method_session_service import (
 )
 from zohopayments.services.mandate_service import MandateService
 from zohopayments.services.collect_service import CollectService
+from zohopayments.services.payout_service import PayoutService
+from zohopayments.services.split_settlement_service import SplitSettlementService
 
 __all__ = [
     "PaymentLinkService",
@@ -27,4 +29,6 @@ __all__ = [
     "PaymentMethodSessionService",
     "MandateService",
     "CollectService",
+    "PayoutService",
+    "SplitSettlementService",
 ]

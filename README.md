@@ -152,6 +152,8 @@ Reserved headers (`Authorization`, `User-Agent`, `Accept`, `Content-Type`, `Cont
 | `client.payment_method_sessions()` | Payment-method collection sessions | US only |
 | `client.mandates()` | Recurring mandates | IN only |
 | `client.collect()` | Virtual accounts (Collect) | IN only |
+| `client.payouts()` | Payouts | All |
+| `client.split_settlement()` | Transfers, transfer reversals, connected accounts | IN only |
 
 ## Examples
 

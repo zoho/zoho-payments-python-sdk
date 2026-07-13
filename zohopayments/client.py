@@ -24,7 +24,9 @@ from zohopayments.services.payment_method_session_service import (
 )
 from zohopayments.services.payment_service import PaymentService
 from zohopayments.services.payment_session_service import PaymentSessionService
+from zohopayments.services.payout_service import PayoutService
 from zohopayments.services.refund_service import RefundService
+from zohopayments.services.split_settlement_service import SplitSettlementService
 
 
 class ZohoPaymentsClient:
@@ -47,6 +49,8 @@ class ZohoPaymentsClient:
         self._payment_method_sessions = PaymentMethodSessionService(http_client)
         self._mandates = MandateService(http_client)
         self._collect = CollectService(http_client)
+        self._payouts = PayoutService(http_client)
+        self._split_settlement = SplitSettlementService(http_client)
 
         self._closed = False
         self._close_lock = threading.Lock()
@@ -98,6 +102,17 @@ class ZohoPaymentsClient:
                 "collect() is available only on Edition.IN / Edition.IN_SANDBOX"
             )
         return self._collect
+
+    def payouts(self) -> PayoutService:
+        return self._payouts
+
+    def split_settlement(self) -> SplitSettlementService:
+        """Requires :attr:`Edition.IN`."""
+        if not self._edition.is_in():
+            raise NotImplementedError(
+                "split_settlement() is available only on Edition.IN / Edition.IN_SANDBOX"
+            )
+        return self._split_settlement
 
 
     def update_token(self, new_access_token: str) -> None:
