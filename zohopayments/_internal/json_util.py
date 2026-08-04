@@ -42,7 +42,10 @@ def parse_object(text: str) -> Dict[str, Any]:
 def get_object(
     body: Optional[Dict[str, Any]], *keys: str
 ) -> Optional[Dict[str, Any]]:
-    """Return the first matching JSON object value from ``body`` by key, or ``None``."""
+    """Return the first matching JSON object value from ``body`` by key, or ``None``.
+
+    ``keys`` = candidate keys: returns on the first key that matches; does not traverse.
+    """
     if not body:
         return None
     for key in keys:
@@ -55,19 +58,37 @@ def get_object(
 def get_object_required(
     body: Optional[Dict[str, Any]], *keys: str
 ) -> Dict[str, Any]:
-    obj = get_object(body, *keys)
-    if obj is None:
-        joined = ", ".join(keys)
+    """Traverse ``body`` through the nested key path formed by ``keys``.
+
+    ``keys`` = path segments: every key is followed in order (nested path), not a
+    fallback list. Raises if any segment is absent or not a JSON object.
+    """
+    current = body
+    for key in keys:
+        if current is None:
+            raise ZohoPaymentsException(
+                f"Response body is null; expected object at key path {list(keys)}"
+            )
+        value = current.get(key)
+        if not isinstance(value, dict):
+            raise ZohoPaymentsException(
+                f"Response body missing expected resource key '{key}' in path {list(keys)}"
+            )
+        current = value
+    if current is None:
         raise ZohoPaymentsException(
-            f"Expected JSON object under one of keys: {joined}"
+            f"Response body is null; expected object at key path {list(keys)}"
         )
-    return obj
+    return current
 
 
 def list_from_body(
     body: Optional[Dict[str, Any]], *keys: str
 ) -> List[Any]:
-    """Return the first JSON array value found under any of the candidate keys."""
+    """Return the first JSON array value found under any of the candidate keys.
+
+    ``keys`` = candidate keys: returns on the first key that matches; does not traverse.
+    """
     if not body:
         return []
     for key in keys:
@@ -77,14 +98,14 @@ def list_from_body(
     return []
 
 
-def unwrap(response_body: Dict[str, Any], type_: Type[T], *candidate_keys: str) -> T:
-    """Extract the single-resource envelope and deserialize into ``type_``.
+def unwrap(response_body: Dict[str, Any], type_: Type[T], *path: str) -> T:
+    """Extract a resource from ``response_body`` and deserialize into ``type_``.
 
-    The response is expected to look like ``{"payment": {...}, ...}``. We take
-    the first key in ``candidate_keys`` that points to a JSON object and feed
-    that to ``type_.from_dict``.
+    ``path`` is a nested key path (e.g. ``"data", "transfers"`` means
+    ``response_body["data"]["transfers"]``), traversed in order, then fed to
+    ``type_.from_dict``.
     """
-    inner = get_object_required(response_body, *candidate_keys)
+    inner = get_object_required(response_body, *path)
     from_dict = getattr(type_, "from_dict", None)
     if from_dict is None:
         raise ZohoPaymentsException(
